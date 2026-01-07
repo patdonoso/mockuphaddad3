@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { X, Lock, Package, Tag, Ruler, Mail, Phone } from 'lucide-react';
+import { Lock, Package, Tag, Ruler, Mail, Phone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Product, formatPrice } from '@/data/products';
+import { formatPrice } from '@/hooks/useProducts';
 import { useNavigate } from 'react-router-dom';
+import type { ProductCardData } from './ProductCard';
 
 interface ProductModalProps {
-  product: Product | null;
+  product: ProductCardData | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -32,7 +33,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose })
         <div className="relative">
           {/* Image Section */}
           <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-secondary to-muted">
-            {!imageError ? (
+            {!imageError && product.image ? (
               <img
                 src={product.image}
                 alt={product.name}
@@ -49,6 +50,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose })
             >
               {product.category}
             </Badge>
+            {product.is_on_offer && product.discount_percentage && (
+              <Badge 
+                className="absolute right-4 top-4 bg-green-600 text-white"
+              >
+                -{product.discount_percentage}% OFF
+              </Badge>
+            )}
           </div>
 
           <div className="p-6">
@@ -90,10 +98,24 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose })
               <p className="mb-2 text-sm font-medium text-muted-foreground">Precio Neto</p>
               {isAuthenticated ? (
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-primary">
-                    {formatPrice(product.price)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">+ IVA</span>
+                  {product.is_on_offer && product.original_price ? (
+                    <>
+                      <span className="text-lg text-muted-foreground line-through">
+                        {formatPrice(product.original_price)}
+                      </span>
+                      <span className="text-3xl font-bold text-green-600">
+                        {formatPrice(product.price)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">+ IVA</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold text-primary">
+                        {formatPrice(product.price)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">+ IVA</span>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-xl bg-secondary/50 p-4">
