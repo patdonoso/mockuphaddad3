@@ -54,14 +54,14 @@ const Auth: React.FC = () => {
         return;
       }
 
-      const success = await register(formData.email, formData.password, formData.name);
-      if (!success) {
-        setError('Este correo ya está registrado. Intenta iniciar sesión.');
+      const result = await register(formData.email, formData.password, formData.name);
+      if (!result.success) {
+        setError(result.error || 'Error al registrar. Intenta nuevamente.');
       }
     } else {
-      const success = await login(formData.email, formData.password);
-      if (!success) {
-        setError('Correo o contraseña incorrectos.');
+      const result = await login(formData.email, formData.password);
+      if (!result.success) {
+        setError(result.error || 'Correo o contraseña incorrectos.');
       }
     }
   };

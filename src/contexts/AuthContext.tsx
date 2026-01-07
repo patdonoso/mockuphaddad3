@@ -1,18 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
-  logout: () => void;
+  isAdmin: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,83 +29,132 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    // Check for stored session
-    const storedUser = localStorage.getItem('haddad_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate login - in production, this would call an API
+  const checkAdminStatus = async (userId: string) => {
     try {
-      setIsLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
       
-      // Check stored users
-      const users = JSON.parse(localStorage.getItem('haddad_users') || '[]');
-      const foundUser = users.find((u: any) => u.email === email && u.password === password);
-      
-      if (foundUser) {
-        const userData = { id: foundUser.id, email: foundUser.email, name: foundUser.name };
-        setUser(userData);
-        localStorage.setItem('haddad_user', JSON.stringify(userData));
-        return true;
-      }
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const users = JSON.parse(localStorage.getItem('haddad_users') || '[]');
-      
-      // Check if user already exists
-      if (users.find((u: any) => u.email === email)) {
+      if (error) {
+        console.error('Error checking admin status:', error);
         return false;
       }
       
-      const newUser = {
-        id: crypto.randomUUID(),
+      return !!data;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Defer admin check
+        if (session?.user) {
+          setTimeout(() => {
+            checkAdminStatus(session.user.id).then(setIsAdmin);
+          }, 0);
+        } else {
+          setIsAdmin(false);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        checkAdminStatus(session.user.id).then(setIsAdmin);
+      }
+      
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        name,
-      };
-      
-      users.push(newUser);
-      localStorage.setItem('haddad_users', JSON.stringify(users));
-      
-      const userData = { id: newUser.id, email: newUser.email, name: newUser.name };
-      setUser(userData);
-      localStorage.setItem('haddad_user', JSON.stringify(userData));
-      
-      return true;
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const adminStatus = await checkAdminStatus(data.user.id);
+        setIsAdmin(adminStatus);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('haddad_user');
+  const register = async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true);
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name,
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setIsAdmin(false);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        session,
+        isAuthenticated: !!session,
         isLoading,
+        isAdmin,
         login,
         register,
         logout,
