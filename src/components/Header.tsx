@@ -1,18 +1,20 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, LogOut, LogIn } from 'lucide-react';
+import { User, LogOut, LogIn, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import logoHaddad from '@/assets/logo-haddad.png';
 
 const Header: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
+
+  const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuario';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/80 backdrop-blur-md">
@@ -38,12 +40,23 @@ const Header: React.FC = () => {
           
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/admin')}
+                  className="gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                >
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
               <div className="hidden items-center gap-2 md:flex">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                   <User className="h-4 w-4 text-primary" />
                 </div>
                 <span className="text-sm font-medium text-foreground">
-                  {user?.name}
+                  {displayName}
                 </span>
               </div>
               <Button 
