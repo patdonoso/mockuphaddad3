@@ -1,7 +1,6 @@
 import React from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -9,13 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { categories } from '@/data/products';
 
 interface SearchBarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
+  categories?: string[];
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -23,6 +22,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onSearchChange,
   selectedCategory,
   onCategoryChange,
+  categories = ['Todos'],
 }) => {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">

@@ -4,10 +4,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Product, formatPrice } from '@/data/products';
+import { formatPrice } from '@/hooks/useProducts';
+
+export interface ProductCardData {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  image: string;
+  description: string;
+  code?: string;
+  capacity?: string;
+  original_price?: number;
+  is_on_offer?: boolean;
+  discount_percentage?: number;
+}
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductCardData;
   onClick: () => void;
   index: number;
 }
@@ -33,7 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, index }) =>
             <Package className="h-12 w-12 animate-pulse text-muted-foreground/30" />
           </div>
         )}
-        {!imageError ? (
+        {!imageError && product.image ? (
           <img
             src={product.image}
             alt={product.name}
@@ -55,6 +69,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, index }) =>
         >
           {product.category}
         </Badge>
+
+        {/* Offer Badge */}
+        {product.is_on_offer && product.discount_percentage && (
+          <Badge 
+            className="absolute right-3 top-3 bg-green-600 text-white"
+          >
+            -{product.discount_percentage}%
+          </Badge>
+        )}
         
         {/* View Details Button */}
         <div className="absolute inset-0 flex items-center justify-center bg-primary/0 opacity-0 transition-all duration-300 group-hover:bg-primary/5 group-hover:opacity-100">
@@ -81,10 +104,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, index }) =>
         
         <div className="flex items-center justify-between">
           {isAuthenticated ? (
-            <p className="text-xl font-bold text-primary">
-              {formatPrice(product.price)}
-              <span className="ml-1 text-xs font-normal text-muted-foreground">+ IVA</span>
-            </p>
+            <div className="flex flex-col">
+              {product.is_on_offer && product.original_price ? (
+                <>
+                  <span className="text-sm text-muted-foreground line-through">
+                    {formatPrice(product.original_price)}
+                  </span>
+                  <p className="text-xl font-bold text-green-600">
+                    {formatPrice(product.price)}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">+ IVA</span>
+                  </p>
+                </>
+              ) : (
+                <p className="text-xl font-bold text-primary">
+                  {formatPrice(product.price)}
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">+ IVA</span>
+                </p>
+              )}
+            </div>
           ) : (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Lock className="h-4 w-4" />
