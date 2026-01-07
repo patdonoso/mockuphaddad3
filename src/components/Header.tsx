@@ -28,7 +28,14 @@ const Header: React.FC = () => {
           </span>
         </Link>
         
-        <nav className="flex items-center gap-2 md:gap-4">
+        <nav className="flex items-center gap-4 md:gap-6">
+          <Link 
+            to="/conozcanos" 
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Conózcanos
+          </Link>
+          
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <div className="hidden items-center gap-2 md:flex">
