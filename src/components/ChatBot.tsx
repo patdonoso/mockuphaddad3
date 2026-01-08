@@ -1,37 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
   content: string;
-  isBot: boolean;
+  role: 'user' | 'assistant';
   timestamp: Date;
 }
 
-const botResponses: Record<string, string> = {
-  hola: "¡Hola! Bienvenido a Haddad. ¿En qué puedo ayudarte hoy?",
-  productos: "Tenemos una amplia variedad de productos reciclables: bidones, envases PET, artículos de jardinería, productos industriales y más. ¿Hay alguna categoría específica que te interese?",
-  bidones: "Ofrecemos bidones de 5L, 10L, 20L y 25L en diferentes configuraciones. También tenemos bidones certificados para combustibles. ¿Necesitas más detalles?",
-  precios: "Para ver los precios de nuestros productos, necesitas iniciar sesión o registrarte en nuestra plataforma. Es completamente gratis.",
-  contacto: "Puedes contactarnos a través de nuestro formulario en línea o visitar nuestra página principal para más información de contacto.",
-  envio: "Realizamos envíos a todo Chile. Los costos varían según la ubicación y cantidad. Contáctanos para una cotización personalizada.",
-  default: "Gracias por tu mensaje. ¿Puedo ayudarte con información sobre nuestros productos, precios, o envíos? También puedo orientarte sobre categorías específicas como bidones, envases PET o artículos industriales."
-};
-
-const getResponse = (message: string): string => {
-  const lowerMessage = message.toLowerCase();
-  
-  for (const [keyword, response] of Object.entries(botResponses)) {
-    if (lowerMessage.includes(keyword)) {
-      return response;
-    }
-  }
-  
-  return botResponses.default;
-};
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,14 +20,15 @@ const ChatBot: React.FC = () => {
     {
       id: '1',
       content: '¡Hola! Soy el asistente virtual de Haddad. ¿En qué puedo ayudarte hoy?',
-      isBot: true,
+      role: 'assistant',
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -60,32 +42,141 @@ const ChatBot: React.FC = () => {
     }
   }, [isOpen]);
 
+  const streamChat = async (userMessages: { role: string; content: string }[]) => {
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages: userMessages }),
+    });
+
+    if (!resp.ok) {
+      const errorData = await resp.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error al conectar con el asistente');
+    }
+
+    if (!resp.body) {
+      throw new Error('No se recibió respuesta');
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let assistantContent = "";
+
+    // Create initial assistant message
+    const assistantId = crypto.randomUUID();
+    setMessages(prev => [...prev, {
+      id: assistantId,
+      content: "",
+      role: 'assistant',
+      timestamp: new Date(),
+    }]);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") break;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => prev.map(m => 
+              m.id === assistantId 
+                ? { ...m, content: assistantContent }
+                : m
+            ));
+          }
+        } catch {
+          // Incomplete JSON, put it back
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+
+    // Final flush
+    if (textBuffer.trim()) {
+      for (let raw of textBuffer.split("\n")) {
+        if (!raw) continue;
+        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+        if (raw.startsWith(":") || raw.trim() === "") continue;
+        if (!raw.startsWith("data: ")) continue;
+        const jsonStr = raw.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => prev.map(m => 
+              m.id === assistantId 
+                ? { ...m, content: assistantContent }
+                : m
+            ));
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  };
+
   const handleSend = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
       content: inputValue,
-      isBot: false,
+      role: 'user',
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setIsTyping(true);
+    setIsLoading(true);
 
-    // Simulate bot thinking
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const chatMessages = messages
+        .filter(m => m.id !== '1') // Exclude initial greeting from context
+        .map(m => ({ role: m.role, content: m.content }));
+      
+      chatMessages.push({ role: 'user', content: inputValue });
 
-    const botMessage: Message = {
-      id: crypto.randomUUID(),
-      content: getResponse(inputValue),
-      isBot: true,
-      timestamp: new Date(),
-    };
-
-    setIsTyping(false);
-    setMessages((prev) => [...prev, botMessage]);
+      await streamChat(chatMessages);
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo conectar con el asistente",
+      });
+      
+      // Add error message
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        content: "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.",
+        role: 'assistant',
+        timestamp: new Date(),
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -126,52 +217,52 @@ const ChatBot: React.FC = () => {
             </div>
             <div>
               <h3 className="font-semibold text-primary-foreground">Asistente Haddad</h3>
-              <p className="text-xs text-primary-foreground/80">Siempre disponible</p>
+              <p className="text-xs text-primary-foreground/80">Asistente con IA</p>
             </div>
           </div>
         </div>
 
         {/* Messages */}
         <ScrollArea className="h-80 p-4" ref={scrollRef}>
-          <div className="flex flex-col gap-3">
+          <div className="space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-start gap-2 ${message.isBot ? '' : 'flex-row-reverse'}`}
+                className={`flex items-start gap-2 ${
+                  message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                }`}
               >
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                    message.isBot ? 'bg-primary/10' : 'bg-secondary'
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
-                  {message.isBot ? (
-                    <Bot className="h-4 w-4 text-primary" />
+                  {message.role === 'user' ? (
+                    <User className="h-4 w-4" />
                   ) : (
-                    <User className="h-4 w-4 text-secondary-foreground" />
+                    <Bot className="h-4 w-4" />
                   )}
                 </div>
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                    message.isBot
-                      ? 'rounded-tl-sm bg-secondary text-secondary-foreground'
-                      : 'rounded-tr-sm gradient-haddad text-primary-foreground'
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-foreground'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.content || '...'}</p>
                 </div>
               </div>
             ))}
-            {isTyping && (
+            {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex items-start gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Bot className="h-4 w-4 text-primary" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <Bot className="h-4 w-4" />
                 </div>
-                <div className="rounded-2xl rounded-tl-sm bg-secondary px-4 py-2">
-                  <div className="flex gap-1">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground" />
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground" style={{ animationDelay: '0.2s' }} />
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground" style={{ animationDelay: '0.4s' }} />
-                  </div>
+                <div className="rounded-2xl bg-muted px-4 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               </div>
             )}
@@ -180,21 +271,21 @@ const ChatBot: React.FC = () => {
 
         {/* Input */}
         <div className="border-t border-border/50 p-4">
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2">
             <Input
               ref={inputRef}
-              type="text"
-              placeholder="Escribe tu mensaje..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 rounded-xl border-border/50"
+              onKeyDown={handleKeyPress}
+              placeholder="Escribe tu mensaje..."
+              className="flex-1 rounded-full border-border/50 bg-background"
+              disabled={isLoading}
             />
             <Button
-              size="icon"
               onClick={handleSend}
-              disabled={!inputValue.trim() || isTyping}
-              className="h-10 w-10 rounded-xl gradient-haddad text-primary-foreground shadow-haddad hover:opacity-90"
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-full gradient-haddad"
+              disabled={!inputValue.trim() || isLoading}
             >
               <Send className="h-4 w-4" />
             </Button>
