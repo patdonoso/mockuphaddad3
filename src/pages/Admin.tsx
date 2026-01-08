@@ -11,7 +11,8 @@ import {
   X,
   Percent,
   Check,
-  Package
+  Package,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ const Admin: React.FC = () => {
     applyOffer,
     removeOffer,
     uploadProductImage,
+    uploadTechnicalSheet,
     refetch,
   } = useAdminProducts();
 
@@ -83,9 +85,12 @@ const Admin: React.FC = () => {
     description: '',
     capacity: '',
     image_url: '',
+    technical_sheet_url: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [technicalSheetFile, setTechnicalSheetFile] = useState<File | null>(null);
+  const [technicalSheetName, setTechnicalSheetName] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
   // New category state
@@ -138,6 +143,23 @@ const Admin: React.FC = () => {
     }
   };
 
+  // Handle technical sheet selection
+  const handleTechnicalSheetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: 'Error',
+          description: 'Solo se permiten archivos PDF.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setTechnicalSheetFile(file);
+      setTechnicalSheetName(file.name);
+    }
+  };
+
   // Open product dialog for create/edit
   const openProductDialog = (product?: Product) => {
     if (product) {
@@ -150,8 +172,10 @@ const Admin: React.FC = () => {
         description: product.description || '',
         capacity: product.capacity || '',
         image_url: product.image_url || '',
+        technical_sheet_url: product.technical_sheet_url || '',
       });
       setImagePreview(product.image_url || '');
+      setTechnicalSheetName(product.technical_sheet_url ? 'Ficha técnica actual' : '');
     } else {
       setEditingProduct(null);
       setProductForm({
@@ -162,10 +186,13 @@ const Admin: React.FC = () => {
         description: '',
         capacity: '',
         image_url: '',
+        technical_sheet_url: '',
       });
       setImagePreview('');
+      setTechnicalSheetName('');
     }
     setImageFile(null);
+    setTechnicalSheetFile(null);
     setIsProductDialogOpen(true);
   };
 
@@ -184,6 +211,7 @@ const Admin: React.FC = () => {
 
     try {
       let imageUrl = productForm.image_url;
+      let technicalSheetUrl = productForm.technical_sheet_url;
 
       // Upload image if selected
       if (imageFile) {
@@ -199,6 +227,20 @@ const Admin: React.FC = () => {
         }
       }
 
+      // Upload technical sheet if selected
+      if (technicalSheetFile) {
+        const uploadResult = await uploadTechnicalSheet(technicalSheetFile);
+        if (uploadResult.success && uploadResult.url) {
+          technicalSheetUrl = uploadResult.url;
+        } else {
+          toast({
+            title: 'Error al subir ficha técnica',
+            description: uploadResult.error || 'No se pudo subir la ficha técnica.',
+            variant: 'destructive',
+          });
+        }
+      }
+
       const productData = {
         name: productForm.name,
         code: productForm.code || undefined,
@@ -207,6 +249,7 @@ const Admin: React.FC = () => {
         description: productForm.description || undefined,
         capacity: productForm.capacity || undefined,
         image_url: imageUrl || undefined,
+        technical_sheet_url: technicalSheetUrl || undefined,
       };
 
       let result;
@@ -488,6 +531,7 @@ const Admin: React.FC = () => {
                         <TableHead>Categoría</TableHead>
                         <TableHead>Capacidad</TableHead>
                         <TableHead className="text-right">Precio</TableHead>
+                        <TableHead>Ficha Técnica</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
@@ -534,6 +578,21 @@ const Admin: React.FC = () => {
                                 </div>
                               ) : (
                                 formatPrice(product.price)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {product.technical_sheet_url ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="gap-1 text-primary"
+                                  onClick={() => window.open(product.technical_sheet_url!, '_blank')}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  Ver
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">Sin ficha</span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -816,6 +875,40 @@ const Admin: React.FC = () => {
                 }}
                 placeholder="https://..."
               />
+            </div>
+
+            {/* Technical Sheet Upload */}
+            <div className="space-y-2">
+              <Label>Ficha Técnica (PDF)</Label>
+              <div className="flex gap-4 items-center">
+                {technicalSheetName && (
+                  <div className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-sm">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="truncate max-w-[150px]">{technicalSheetName}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTechnicalSheetFile(null);
+                        setTechnicalSheetName('');
+                        setProductForm({ ...productForm, technical_sheet_url: '' });
+                      }}
+                      className="rounded-full bg-destructive p-1 text-destructive-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                <label className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-4 hover:border-primary transition-colors">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Subir PDF</span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleTechnicalSheetChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
           </div>
 

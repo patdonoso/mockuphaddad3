@@ -55,6 +55,7 @@ const Index: React.FC = () => {
     original_price: product.original_price || undefined,
     is_on_offer: product.is_on_offer,
     discount_percentage: product.discount_percentage,
+    technical_sheet_url: product.technical_sheet_url || undefined,
   });
 
   return (

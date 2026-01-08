@@ -18,6 +18,7 @@ export interface ProductCardData {
   original_price?: number;
   is_on_offer?: boolean;
   discount_percentage?: number;
+  technical_sheet_url?: string;
 }
 
 interface ProductCardProps {
