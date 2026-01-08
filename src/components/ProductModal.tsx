@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Package, Tag, Ruler, Mail, Phone } from 'lucide-react';
+import { Lock, Package, Tag, Ruler, Mail, Phone, FileText, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose })
   const handleLoginClick = () => {
     onClose();
     navigate('/auth');
+  };
+
+  const handleDownloadTechnicalSheet = () => {
+    if (product.technical_sheet_url) {
+      window.open(product.technical_sheet_url, '_blank');
+    }
   };
 
   return (
@@ -90,6 +96,21 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose })
                 </div>
               )}
             </div>
+
+            {/* Technical Sheet Section */}
+            {product.technical_sheet_url && (
+              <div className="mb-6">
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10"
+                  onClick={handleDownloadTechnicalSheet}
+                >
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Ver Ficha Técnica</span>
+                  <Download className="h-4 w-4 ml-auto text-primary" />
+                </Button>
+              </div>
+            )}
 
             <Separator className="mb-6" />
 

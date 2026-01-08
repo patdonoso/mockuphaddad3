@@ -18,6 +18,7 @@ export interface Product {
   image_url: string | null;
   is_on_offer: boolean;
   discount_percentage: number;
+  technical_sheet_url: string | null;
 }
 
 export interface Category {
@@ -84,6 +85,7 @@ export const useProducts = () => {
         image_url: p.image_url,
         is_on_offer: p.is_on_offer || false,
         discount_percentage: p.discount_percentage || 0,
+        technical_sheet_url: p.technical_sheet_url,
       }));
 
       setProducts(formattedProducts);
@@ -139,6 +141,7 @@ export const useAdminProducts = () => {
     description?: string;
     capacity?: string;
     image_url?: string;
+    technical_sheet_url?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase.from('products').insert({
@@ -149,6 +152,7 @@ export const useAdminProducts = () => {
         description: product.description || null,
         capacity: product.capacity || null,
         image_url: product.image_url || null,
+        technical_sheet_url: product.technical_sheet_url || null,
       });
 
       if (error) {
@@ -175,6 +179,7 @@ export const useAdminProducts = () => {
       is_on_offer: boolean;
       discount_percentage: number;
       original_price: number;
+      technical_sheet_url: string;
     }>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -309,6 +314,31 @@ export const useAdminProducts = () => {
     }
   };
 
+  const uploadTechnicalSheet = async (file: File): Promise<{ success: boolean; url?: string; error?: string }> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `technical-sheets/${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(fileName, file, {
+          contentType: 'application/pdf',
+        });
+
+      if (uploadError) {
+        return { success: false, error: uploadError.message };
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(fileName);
+
+      return { success: true, url: publicUrl };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
   return {
     products,
     categories,
@@ -322,6 +352,7 @@ export const useAdminProducts = () => {
     applyOffer,
     removeOffer,
     uploadProductImage,
+    uploadTechnicalSheet,
   };
 };
 
