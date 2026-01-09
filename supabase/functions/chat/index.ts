@@ -55,83 +55,92 @@ DATOS BANCARIOS PARA TRANSFERENCIAS
 - RUT: 86.778.100-5
 
 ═══════════════════════════════════════════════════════════════════════════════
-CATÁLOGO DE PRODUCTOS
+CATÁLOGO DETALLADO DE PRODUCTOS CON ESPECIFICACIONES
 ═══════════════════════════════════════════════════════════════════════════════
 
-📦 BIDONES Y CONTENEDORES:
-- Bidones Standard: 1L, 2L, 5L, 10L, 20L, 25L, 30L
-- Bidones Económicos
-- Bidones Boca Ancha
-- Bidones con Ruedas
-- Bidones Lecheros
-- Bidones Pallet Apilable
-- Bidones PET 5 litros
-- Bidones y Tambores con Llave
-- Bidones y Tambores Valvulados (con ventilación)
+🪣 BALDES:
+- Capacidades: 4L, 5L, 10L, 16L, 20L y 65L
+- Material: PEAD (Polietileno de Alta Densidad)
+- Uso: Industrial, alimenticio, construcción
 
-⛽ COMBUSTIBLES (CERTIFICADOS SEC):
-- Bidones Certificados para Parafina/Kerosene (5L, 10L, 20L)
-- Bidones Certificados para Petróleo/Diesel
-- Bidones Certificados para Gasolina
+📦 BIDONES STANDARD:
+- Rango de capacidades: 250cc a 60L
+- Bidones con llave: 10L, 20L, 25L, 28L, 50L, 60L y 120L
+- Bidones polietileno liviano
+- Material: PEAD de alta densidad
 
-🍶 ENVASES PET:
-- Botellas PET para agua, jugos, leche
-- Botellas para detergente (3L oval)
-- Envases con sellos de seguridad
-- Envases para aceites
+⛽ BIDONES PARA COMBUSTIBLES (CERTIFICADOS SEC):
+- Bidones antivuelco: 10L y 20L
+- Combustibles compatibles: Diesel, Kerosene, Gasolina
+- Incluyen boquilla de seguridad
+- Certificación SEC para transporte seguro
 
-🏭 INDUSTRIAL:
-- Tambores 60L, 100L, 120L, 200L
-- Baldes para uso industrial
-- Barricas
-- Estanques
-- Fosas sépticas
-- Bombas para extracción de líquidos
-- Bolitas huecas antievaporantes (esferas plásticas)
-- Barreras camineras tipo New Jersey
+🍶 BOTELLAS PEAD:
+- Rango: 30cc a 3L
+- Material: PEAD de alta densidad
+- Botellas 3L especiales para detergente
+- Opciones de tapa: dosificadora y flip top
 
-🌱 JARDINERÍA:
-- Maceteros (varios tamaños y formas)
-- Jardineras
-- Regaderas
-- Apliqués para colgar maceteros
-- Bandejas cosecheras
-- Bandejas para fruta
+💎 BOTELLAS Y ENVASES PET:
+- Botellas PET pequeñas: 15cc a 250cc
+- Botellas PET medianas: 1/2L, 1L, 2L, 3L, 5L y 6L
+- Botellones PET grandes: 10L y 20L
+- Frascos PET transparentes: 200cc a 3,6L
+- Uso: Agua, jugos, aceites, productos de limpieza
 
-🏠 HOGAR:
+🧴 FRASCOS:
+- Frascos PEAD: 30cc a 3L
+- Frascos PET transparentes: 200cc a 3,6L
+- Potes para crema (varios tamaños)
+
+🏭 TAMBORES INDUSTRIALES:
+- Tambores estándar: 120L, 200L y 228L
+- Tambores boca ancha: 30L, 60L, 120L y 230L
+- Uso: Almacenamiento industrial, químicos, alimentos
+
+🥛 LECHEROS:
+- Capacidades: 3L, 5L y 10L
+- Material: PEAD grado alimenticio
+
+🚜 AGRÍCOLA Y JARDÍN:
+- Cajas cosecheras 3/4
+- Esferas antinebulizantes (bolitas huecas antievaporantes)
+- Maceteros para viveros
+- Estanques horizontales
+
+🏠 CONSTRUCCIÓN E INFRAESTRUCTURA:
+- Fosas sépticas: 2250L y 3000L
+- Estanques horizontales para agua
+
+🗑️ BASUREROS Y RESIDUOS:
+- Tarros de basura: 12L, 12.5L, 35L, 36L, 50L, 80L, 100L y 120L
 - Basureros para reciclaje
-- Bolsas para basura
-- Bolsas para reciclaje
-- Sillas plegables de plástico
-- Muebles de terraza
-- Bacinicas
+
+🪑 MOBILIARIO PLÁSTICO:
+- Sillas para adultos
+- Mesas
+- Pisos plásticos
+- Sillas y mesas para niños
+
+🏕️ MENAJE Y CAMPING:
+- Caramelas
+- Neveras 48L
+- Termos y artículos portátiles
+
+🔧 ACCESORIOS Y FERRETERÍA:
+- Mangueras PVC: 1/8" a 1" (pulgadas)
+- Tapas para WC
+- Pistolas spray
+- Jaboneros y perfumeros
+
+💇 ARTÍCULOS DE BELLEZA:
+- Peinetas Pantera
+- Cepillos
 
 🏥 SALUD Y FARMACIA:
 - Artículos para enfermos (chatas, urinarios)
-- Artículos de farmacia
 - Envases para laboratorio
-- Envases autoclavables para cultivo in vitro
-
-🔬 LABORATORIO:
-- Frascos para laboratorio
 - Envases autoclavables
-- Probetas y recipientes técnicos
-
-🏕️ CAMPING:
-- Termos
-- Bidones portátiles
-- Artículos para exterior
-
-🚗 AUTOMÓVILES:
-- Embudos
-- Bidones para combustible
-- Accesorios plásticos
-
-🎁 PROMOCIÓN Y OTROS:
-- Artículos promocionales
-- Juguetes
-- Peinetas y cepillos
-- Artículos para dosificar
 
 ═══════════════════════════════════════════════════════════════════════════════
 DIRECTRICES DE RESPUESTA
