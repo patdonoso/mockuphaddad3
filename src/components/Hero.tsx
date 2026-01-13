@@ -30,7 +30,7 @@ const Hero: React.FC = () => {
             className="mb-6 font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl animate-slide-up"
             style={{ animationDelay: '100ms' }}
           >
-            Productos Reciclables de{' '}
+            Productos Plásticos de{' '}
             <span className="text-gradient-haddad">Alta Calidad</span>
           </h1>
 
